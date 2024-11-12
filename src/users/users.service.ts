@@ -4,6 +4,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './users.model';
 import { Model } from 'mongoose';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -31,13 +32,13 @@ export class UsersService {
     }
   }
 
-  async findByEmail(email){
+  async findByEmail(email) {
     try {
-      return await this.userModel.findOne({email});
+      return await this.userModel.findOne({ email });
     } catch (error) {
       console.log('findByEmail method failed. Error:', error.message);
       throw error;
-    }  
+    }
   }
 
   async findOne(id: string) {
@@ -47,7 +48,7 @@ export class UsersService {
     } catch (error) {
       console.log('users findOne failed. Error:', error.message);
       throw error;
-    }  
+    }
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
@@ -57,13 +58,23 @@ export class UsersService {
   async remove(id: string) {
     try {
       const res = await this.userModel.findById(id);
-      console.log("res : ", res);
-      if(!res) throw new Error( 'user not found');
-      await this.userModel.deleteOne({_id: id});
+      if (!res) throw new Error('user not found');
+      await this.userModel.deleteOne({ _id: id });
       return res;
     } catch (error) {
       console.log('users deletion failed. Error:', error.message);
       throw error;
-    }  
+    }
+  }
+
+  async validateUser(email: string, pass: string): Promise<any> {
+    const user = await this.findByEmail(email);
+    // if (user && (await bcrypt.compare(pass, user.password))) {
+    if (user && pass === user.password) {
+      const obj = user.toObject();
+      const { password, ...result } = user.toObject();
+      return result;
+    }
+    return null;
   }
 }
